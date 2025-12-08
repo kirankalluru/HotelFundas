@@ -1,0 +1,18 @@
+{
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx8G -Xms100m -javaagent:\"${userHome}/.m2/repository/org/projectlombok/lombok/1.18.26/lombok-1.18.26.jar\"",
+    "java.format.settings.url": ".vscode/java-formatter.xml",
+    "java.completion.importOrder": [
+        "java",
+        "javax",
+        "org",
+        "com"
+    ],
+    "java.sources.organizeImports.staticStarThreshold": 3,
+    "java.sources.organizeImports.starThreshold": 3,
+    "java.configuration.maven.userSettings": "~/.m2/settings.xml",
+    "cSpell.words": [
+        "Inwarding"
+    ]
+} 
