@@ -2,29 +2,33 @@ package com.example.demo.entity.customer;
 
 import com.example.demo.entity.common.BaseEntity;
 import com.example.demo.entity.common.Address;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import com.example.demo.converter.AddressConverter;
-
 
 @Entity
 @Table(name = "customers")
 public class Customer extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "customer_seq_gen")
-    @SequenceGenerator(name = "customer_seq_gen", sequenceName = "customer_seq", allocationSize = 108, initialValue = 100000)
+    @SequenceGenerator(
+            name = "customer_seq_gen",
+            sequenceName = "customer_seq",
+            allocationSize = 108,
+            initialValue = 100000
+    )
     private Long id;
 
-    @Column(nullable = false,unique = true)
+    // ✅ ADDED: branchId
+    @Column(name = "branch_id", nullable = false)
+    private Long branchId;
+
+    @Column(nullable = false, unique = true)
     private String name;
 
     private String tradeName;
-
-  
     private String code;
 
     @Column(length = 15)
@@ -55,15 +59,13 @@ public class Customer extends BaseEntity {
     @Column(nullable = false)
     private CustomerStatus status = CustomerStatus.ACTIVE;
 
-
     private boolean isActive;
 
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CustomerUser> users = new ArrayList<>();
 
-  
+    // ===== Getters & Setters =====
 
-    // Getters and setters
     public Long getId() {
         return id;
     }
@@ -72,12 +74,29 @@ public class Customer extends BaseEntity {
         this.id = id;
     }
 
+    // ✅ branchId getter & setter
+    public Long getBranchId() {
+        return branchId;
+    }
+
+    public void setBranchId(Long branchId) {
+        this.branchId = branchId;
+    }
+
     public String getName() {
         return name;
     }
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getTradeName() {
+        return tradeName;
+    }
+
+    public void setTradeName(String tradeName) {
+        this.tradeName = tradeName;
     }
 
     public String getCode() {
@@ -102,30 +121,6 @@ public class Customer extends BaseEntity {
 
     public void setPan(String pan) {
         this.pan = pan;
-    }
-
-    public List<ContactPerson> getContactPersons() {
-        return contactPersons;
-    }
-
-    public void setContactPersons(List<ContactPerson> contactPersons) {
-        this.contactPersons = contactPersons;
-    }
-
-    public CustomerType getType() {
-        return type;
-    }
-
-    public void setType(CustomerType type) {
-        this.type = type;
-    }
-
-    public CustomerStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(CustomerStatus status) {
-        this.status = status;
     }
 
     public String getPhone() {
@@ -160,6 +155,29 @@ public class Customer extends BaseEntity {
         this.shippingAddress = shippingAddress;
     }
 
+    public List<ContactPerson> getContactPersons() {
+        return contactPersons;
+    }
+
+    public void setContactPersons(List<ContactPerson> contactPersons) {
+        this.contactPersons = contactPersons;
+    }
+
+    public CustomerType getType() {
+        return type;
+    }
+
+    public void setType(CustomerType type) {
+        this.type = type;
+    }
+
+    public CustomerStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(CustomerStatus status) {
+        this.status = status;
+    }
 
     public boolean isActive() {
         return isActive;
@@ -168,14 +186,4 @@ public class Customer extends BaseEntity {
     public void setActive(boolean active) {
         isActive = active;
     }
-
-    public String getTradeName() {
-        return tradeName;
-    }
-
-    public void setTradeName(String tradeName) {
-        this.tradeName = tradeName;
-    }       
-
-
-} 
+}

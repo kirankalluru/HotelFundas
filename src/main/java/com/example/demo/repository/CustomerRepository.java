@@ -17,8 +17,9 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     @Query("SELECT c FROM Customer c WHERE c.isActive = true")
     List<Customer> findAllActive();
 
-    @Query("SELECT c FROM Customer c WHERE c.branch.id = :branchId AND c.isActive = true")
+    @Query("SELECT c FROM Customer c WHERE c.branchId = :branchId AND c.isActive = true")
     List<Customer> findActiveByBranchId(@Param("branchId") Long branchId);
+
 
     @Query("SELECT c FROM Customer c WHERE " +
            "LOWER(c.name) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
