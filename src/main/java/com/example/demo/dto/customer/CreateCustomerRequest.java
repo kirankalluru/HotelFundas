@@ -34,6 +34,8 @@ public class CreateCustomerRequest {
     private CustomerType type;
     private CustomerStatus status = CustomerStatus.ACTIVE;
 
+    private String drivingLicense;
+
     // Getters and Setters
     public String getName() {
         return name;
@@ -129,5 +131,14 @@ public class CreateCustomerRequest {
 
     public void setBranchId(Long branchId) {
         this.branchId = branchId;
-    }   
+    }
+
+    public String getDrivingLicense() {
+        return drivingLicense;
+    }
+
+    public void setDrivingLicense(String drivingLicense) {
+        this.drivingLicense = drivingLicense;
+    }
+
 } 

@@ -12,6 +12,8 @@ import com.example.demo.entity.customer.*;
 import com.example.demo.exception.ServiceException;
 import com.example.demo.repository.CustomerRepository;
 import com.example.demo.repository.CustomerUserRepository;
+import com.example.demo.dto.customer.CreateCustomerUserRequest;
+
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -19,169 +21,177 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import javax.persistence.EntityNotFoundException;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.ArrayList;
-import com.example.demo.dto.customer.CreateCustomerUserRequest;
 import java.util.stream.Collectors;
-
 
 @Service
 @Transactional
 public class CustomerService {
-    
+
     private final CustomerRepository customerRepository;
     private final CustomerUserRepository customerUserRepository;
-        private final PasswordEncoder passwordEncoder;
-    
+    private final PasswordEncoder passwordEncoder;
+
     @Autowired
     public CustomerService(CustomerRepository customerRepository,
-    CustomerUserRepository customerUserRepository,
-            PasswordEncoder passwordEncoder) {
-        this.passwordEncoder = passwordEncoder; 
+                           CustomerUserRepository customerUserRepository,
+                           PasswordEncoder passwordEncoder) {
         this.customerRepository = customerRepository;
         this.customerUserRepository = customerUserRepository;
+        this.passwordEncoder = passwordEncoder;
     }
-    
+
+    // ================= CREATE =================
+
     public CustomerResponse saveCustomer(Long id, CreateCustomerRequest request) {
+
         Customer customer;
-        // if(StringUtils.isEmpty(request.getPhone()) || StringUtils.isEmpty(request.getEmail()) || StringUtils.isEmpty(request.getName())) {
-        //     throw new ServiceException("Phone, Email and Name are required");
-        // }
+
         if (id != null) {
-            // Update existing customer
             customer = customerRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Customer not found"));
+                    .orElseThrow(() -> new EntityNotFoundException("Customer not found"));
         } else {
-            // Create new customer
             customer = new Customer();
-
-
-
-            // if(customerRepository.findByPhone(request.getPhone()).isPresent()) {
-            //     throw new ServiceException("Customer already exists with this phone number "+request.getPhone());
-            // }
-
-            // if(customerRepository.findByEmail(request.getEmail()).isPresent()) {
-            //     throw new ServiceException("Customer already exists with this email "+request.getEmail());
-            // }
         }
-        
+
         setCustomerFields(customer, request);
-        
-        if (id == null) {
-            customer.setCreatedAt(LocalDateTime.now());
-        }
-        customer.setUpdatedAt(LocalDateTime.now());
-        
-        Customer savedCustomer = customerRepository.save(customer);
-        return convertToResponse(savedCustomer);
+
+        return convertToResponse(customerRepository.save(customer));
     }
-    
+
+    // ================= GET =================
+
     public CustomerResponse getCustomerById(Long id) {
         return customerRepository.findById(id)
-            .map(this::convertToResponse)
-            .orElseThrow(() -> new EntityNotFoundException("Customer not found"));
+                .map(this::convertToResponse)
+                .orElseThrow(() -> new EntityNotFoundException("Customer not found"));
     }
-    
-    @Transactional
+
+    // ================= SEARCH =================
+
     public Page<CustomerResponse> searchCustomers(String name, String code, Pageable pageable) {
+
         Page<Customer> customers;
-        
+
         if ((name != null && !name.isEmpty()) || (code != null && !code.isEmpty())) {
             customers = customerRepository.findByNameContainingIgnoreCase(
-                name != null ? name : "", 
-                pageable
+                    name != null ? name : "", pageable
             );
         } else {
             customers = customerRepository.findAll(pageable);
         }
-        
+
         return customers.map(this::convertToResponse);
     }
-    
+
+    // REQUIRED BY CONTROLLER
+    public List<CustomerDTO> searchCustomersByName(String name) {
+        return customerRepository.findByNameContainingIgnoreCase(name)
+                .stream()
+                .map(c -> new CustomerDTO(c.getId(), c.getName()))
+                .collect(Collectors.toList());
+    }
+
+    // ================= DELETE =================
+
     public void deleteCustomer(Long id) {
         Customer customer = customerRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Customer not found"));
-            
-        // Check if customer can be deleted (no active agreements, etc)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
         customerRepository.delete(customer);
     }
-    
+
+    // ================= FIELD MAPPING =================
+
     private void setCustomerFields(Customer customer, CreateCustomerRequest request) {
-        // Basic Information
+
         customer.setName(request.getName());
         customer.setCode(request.getCode());
         customer.setEmail(request.getEmail());
         customer.setPhone(request.getPhone());
-       
-        // Addresses
+
+        if (request.getBranchId() == null) {
+            throw new ServiceException("branchId is required");
+        }
+        customer.setBranchId(request.getBranchId());
+
+        customer.setDrivingLicense(request.getDrivingLicense());
+
         customer.setShippingAddress(request.getShippingAddress());
         customer.setBillingAddress(request.getBillingAddress());
-        
-        // Tax Information
+
         customer.setGstin(request.getGstin());
         customer.setPan(request.getPan());
-        
-        // Business Information
+
         customer.setType(request.getType());
         customer.setStatus(request.getStatus());
 
-        // Handle contact persons
         if (request.getContactPersons() != null) {
-            customer.getContactPersons().clear(); // Clear existing contacts
+            customer.getContactPersons().clear();
             request.getContactPersons().forEach(dto -> {
-                ContactPerson contactPerson = new ContactPerson();
-                contactPerson.setName(dto.getName());
-                contactPerson.setEmail(dto.getEmail());
-                contactPerson.setPhone(dto.getPhone());
-                contactPerson.setTag(dto.getTag());
-                contactPerson.setCustomer(customer);
-                customer.getContactPersons().add(contactPerson);
+                ContactPerson cp = new ContactPerson();
+                cp.setName(dto.getName());
+                cp.setEmail(dto.getEmail());
+                cp.setPhone(dto.getPhone());
+                cp.setTag(dto.getTag());
+                cp.setCustomer(customer);
+                customer.getContactPersons().add(cp);
             });
         }
     }
-    
-    private void setCustomerFields(Customer customer, UpdateCustomerRequest request) {
-        // Basic Information
+
+    // ================= UPDATE =================
+
+    public CustomerResponse updateCustomer(Long customerId, UpdateCustomerRequest request) {
+
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
+
         if (request.getName() != null) customer.setName(request.getName());
         if (request.getEmail() != null) customer.setEmail(request.getEmail());
         if (request.getPhone() != null) customer.setPhone(request.getPhone());
-        
-        // Addresses
-        if (request.getShippingAddress() != null) customer.setShippingAddress(request.getShippingAddress());
-        if (request.getBillingAddress() != null) customer.setBillingAddress(request.getBillingAddress());
-        
-        // Tax Information
         if (request.getGstin() != null) customer.setGstin(request.getGstin());
         if (request.getPan() != null) customer.setPan(request.getPan());
-        
-        // Business Information
-        if (request.getType() != null) customer.setType(CustomerType.valueOf(request.getType()));
-        if (request.getStatus() != null) customer.setStatus(CustomerStatus.valueOf(request.getStatus()));
+        if (request.getDrivingLicense() != null) {
+            customer.setDrivingLicense(request.getDrivingLicense());
+        }
 
-        // Handle contact persons
+        if (request.getType() != null) {
+            customer.setType(CustomerType.valueOf(request.getType()));
+        }
+        if (request.getStatus() != null) {
+            customer.setStatus(CustomerStatus.valueOf(request.getStatus()));
+        }
+
+        if (request.getBillingAddress() != null) {
+            customer.setBillingAddress(request.getBillingAddress());
+        }
+        if (request.getShippingAddress() != null) {
+            customer.setShippingAddress(request.getShippingAddress());
+        }
+
         if (request.getContactPersons() != null) {
-            // Clear existing contact persons
             customer.getContactPersons().clear();
-            
-            // Add new contact persons
             request.getContactPersons().forEach(dto -> {
-                ContactPerson contactPerson = new ContactPerson();
-                contactPerson.setName(dto.getName());
-                contactPerson.setEmail(dto.getEmail());
-                contactPerson.setPhone(dto.getPhone());
-                contactPerson.setTag(dto.getTag());
-                contactPerson.setCustomer(customer);
-                customer.getContactPersons().add(contactPerson);
+                ContactPerson cp = new ContactPerson();
+                cp.setName(dto.getName());
+                cp.setEmail(dto.getEmail());
+                cp.setPhone(dto.getPhone());
+                cp.setTag(dto.getTag());
+                cp.setCustomer(customer);
+                customer.getContactPersons().add(cp);
             });
         }
+
+        return convertToResponse(customerRepository.save(customer));
     }
-    
+
+    // ================= RESPONSE =================
+
     private CustomerResponse convertToResponse(Customer customer) {
+
         CustomerResponse response = new CustomerResponse();
         response.setId(customer.getId());
         response.setName(customer.getName());
@@ -190,25 +200,25 @@ public class CustomerService {
         response.setPhone(customer.getPhone());
         response.setGstin(customer.getGstin());
         response.setPan(customer.getPan());
+        response.setDrivingLicense(customer.getDrivingLicense());
         response.setStatus(customer.getStatus().toString());
         response.setType(customer.getType().toString());
         response.setBillingAddress(convertToAddressDTO(customer.getBillingAddress()));
         response.setShippingAddress(convertToAddressDTO(customer.getShippingAddress()));
-        
-        // Convert contact persons
-        response.setContactPersons(customer.getContactPersons().stream()
-            .map(this::convertToDTO)
-            .collect(Collectors.toList()));
-            
+        response.setContactPersons(
+                customer.getContactPersons().stream()
+                        .map(this::convertToDTO)
+                        .collect(Collectors.toList())
+        );
         response.setCreatedAt(customer.getCreatedAt());
         response.setUpdatedAt(customer.getUpdatedAt());
+
         return response;
     }
 
     private AddressDTO convertToAddressDTO(Address address) {
-        if (address == null) {
-            return null;
-        }
+        if (address == null) return null;
+
         AddressDTO dto = new AddressDTO();
         dto.setAddressLine1(address.getAddressLine1());
         dto.setAddressLine2(address.getAddressLine2());
@@ -219,93 +229,52 @@ public class CustomerService {
         return dto;
     }
 
-    private ContactPersonDTO convertToDTO(ContactPerson contactPerson) {
+    private ContactPersonDTO convertToDTO(ContactPerson cp) {
         ContactPersonDTO dto = new ContactPersonDTO();
-        dto.setId(contactPerson.getId());
-        dto.setName(contactPerson.getName());
-        dto.setEmail(contactPerson.getEmail());
-        dto.setPhone(contactPerson.getPhone());
-        dto.setTag(contactPerson.getTag());
+        dto.setId(cp.getId());
+        dto.setName(cp.getName());
+        dto.setEmail(cp.getEmail());
+        dto.setPhone(cp.getPhone());
+        dto.setTag(cp.getTag());
         return dto;
     }
 
-    public List<CustomerDTO> searchCustomersByName(String name) {
-        List<Customer> customers = customerRepository.findByNameContainingIgnoreCase(name);
-        return customers.stream()
-            .map(customer -> new CustomerDTO(customer.getId(), customer.getName()))
-            .collect(Collectors.toList());
+    // ================= BULK =================
+
+    public List<CustomerResponse> createCustomersInBulk(List<CreateCustomerRequest> requests) {
+        List<CustomerResponse> responses = new ArrayList<>();
+        for (CreateCustomerRequest request : requests) {
+            responses.add(saveCustomer(null, request));
+        }
+        return responses;
     }
 
-    @Transactional
-    public CustomerResponse updateCustomer(Long customerId, UpdateCustomerRequest request) {
-        Customer customer = customerRepository.findById(customerId)
-            .orElseThrow(() -> new RuntimeException("Customer not found"));
-
-        customer.setName(request.getName());
-        customer.setEmail(request.getEmail());
-        customer.setPhone(request.getPhone());
-        customer.setGstin(request.getGstin());
-        customer.setPan(request.getPan());
-        customer.setType(CustomerType.valueOf(request.getType()));
-        customer.setStatus(CustomerStatus.valueOf(request.getStatus()));
-
-        // Update addresses
-        customer.setBillingAddress(request.getBillingAddress());
-        customer.setShippingAddress(request.getShippingAddress());
-
-        // Update contact persons
-        customer.getContactPersons().clear();
-        request.getContactPersons().forEach(dto -> {
-            ContactPerson contactPerson = new ContactPerson();
-            contactPerson.setName(dto.getName());
-            contactPerson.setEmail(dto.getEmail());
-            contactPerson.setPhone(dto.getPhone());
-            contactPerson.setTag(dto.getTag());
-            contactPerson.setCustomer(customer);
-            customer.getContactPersons().add(contactPerson);
-        });
-
-        customerRepository.save(customer);
-
-        return convertToResponse(customer);
-    }
-
-    public List<CustomerResponse> createCustomersInBulk(List<CreateCustomerRequest> customerRequests) {
-        List<CustomerResponse> customerResponses = new ArrayList<>();
-        customerRequests.forEach(request -> {
-            customerResponses.add(saveCustomer(null, request));
-        });
-        return customerResponses;
-    }
+    // ================= CUSTOMER USER =================
 
     public CustomerUserResponse createCustomerUser(CreateCustomerUserRequest request) {
-        // 1. Fetch Customer by request.getCustomerId()
+
         Customer customer = customerRepository.findById(request.getCustomerId())
-            .orElseThrow(() -> new EntityNotFoundException("Customer not found with id: " + request.getCustomerId()));
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Customer not found with id: " + request.getCustomerId()));
 
-        // 2. Create new CustomerUser, set fields, hash password
-        CustomerUser customerUser = new CustomerUser();
-        customerUser.setEmail(request.getEmail());
-        customerUser.setName(request.getName());
-        customerUser.setPhone(request.getPhone());
-        customerUser.setRole(request.getRole());
-        customerUser.setCustomer(customer);
+        CustomerUser user = new CustomerUser();
+        user.setEmail(request.getEmail());
+        user.setName(request.getName());
+        user.setPhone(request.getPhone());
+        user.setRole(request.getRole());
+        user.setCustomer(customer);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        // Hash password (assuming you have a PasswordEncoder bean)
-        
-        customerUser.setPassword(passwordEncoder.encode(request.getPassword()));
+        customerUserRepository.save(user);
 
-        // 3. Save CustomerUser using customerUserRepository
-        customerUserRepository.save(customerUser);
-        // Map to response DTO
         CustomerUserResponse response = new CustomerUserResponse();
-        response.setId(customerUser.getId());
-        response.setEmail(customerUser.getEmail());
+        response.setId(user.getId());
+        response.setEmail(user.getEmail());
         response.setCustomerId(customer.getId());
-        // Set other fields
-        response.setName(customerUser.getName());
-        response.setPhone(customerUser.getPhone());
-        response.setRole(customerUser.getRole());
+        response.setName(user.getName());
+        response.setPhone(user.getPhone());
+        response.setRole(user.getRole());
+
         return response;
     }
 }

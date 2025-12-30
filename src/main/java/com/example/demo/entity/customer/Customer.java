@@ -37,6 +37,10 @@ public class Customer extends BaseEntity {
     @Column(length = 10)
     private String pan;
 
+    @Column(name = "driving_license")
+    private String drivingLicense;
+
+
     private String phone;
     private String email;
 
@@ -186,4 +190,13 @@ public class Customer extends BaseEntity {
     public void setActive(boolean active) {
         isActive = active;
     }
+
+    public String getDrivingLicense() {
+        return drivingLicense;
+    }
+
+    public void setDrivingLicense(String drivingLicense) {
+        this.drivingLicense = drivingLicense;
+    }
+
 }

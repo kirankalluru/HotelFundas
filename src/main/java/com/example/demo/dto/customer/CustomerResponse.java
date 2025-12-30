@@ -20,6 +20,9 @@ public class CustomerResponse {
     private LocalDateTime updatedAt;
     private AddressDTO billingAddress;
     private AddressDTO shippingAddress;
+    private String drivingLicense;
+
+
 
     // Getters and Setters
     public Long getId() {
@@ -132,5 +135,14 @@ public class CustomerResponse {
 
     public void setType(String type) {
         this.type = type;
-    }   
+    }
+
+    public String getDrivingLicense() {
+        return drivingLicense;
+    }
+
+    public void setDrivingLicense(String drivingLicense) {
+        this.drivingLicense = drivingLicense;
+    }
+
 } 

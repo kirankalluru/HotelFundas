@@ -1,11 +1,8 @@
 package com.example.demo.entity.common;
 
 import javax.persistence.*;
-
 import org.hibernate.annotations.*;
-
 import java.time.LocalDateTime;
-
 import com.example.demo.context.UserContext;
 
 @MappedSuperclass
@@ -14,7 +11,6 @@ import com.example.demo.context.UserContext;
 @SQLDelete(sql = "UPDATE #{#entityName} SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
 @Where(clause = "deleted_at IS NULL")
 public abstract class BaseEntity {
-   
 
     @CreationTimestamp
     @Column(updatable = false)
@@ -36,17 +32,31 @@ public abstract class BaseEntity {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        createdBy = UserContext.getCurrentUser().getUserId();
-        updatedBy = UserContext.getCurrentUser().getUserId();
-        
+
+        // Safely get user ID from UserContext
+        UserContext userContext = UserContext.getCurrentUser();
+        if (userContext != null) {
+            createdBy = userContext.getUserId();
+            updatedBy = userContext.getUserId();
+        } else {
+            // Default value when UserContext is not set
+            createdBy = 1L;  // System user
+            updatedBy = 1L;
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+
+        // Safely get user ID from UserContext for updates
+        UserContext userContext = UserContext.getCurrentUser();
+        if (userContext != null) {
+            updatedBy = userContext.getUserId();
+        }
     }
 
-    
+    // Getters and setters remain the same
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -86,4 +96,4 @@ public abstract class BaseEntity {
     public void setDeletedAt(LocalDateTime deletedAt) {
         this.deletedAt = deletedAt;
     }
-} 
+}

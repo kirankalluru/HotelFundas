@@ -15,13 +15,6 @@ import com.example.demo.entity.common.Address;
 
 
 public class EntityDTOConverter {
-    
-    
-   
-   
-
-  
-  
 
     public static AddressDTO convertToAddressDTO(Address address) {
         if (address == null) {

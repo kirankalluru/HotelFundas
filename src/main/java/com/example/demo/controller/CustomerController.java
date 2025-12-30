@@ -57,7 +57,7 @@ public class CustomerController {
         
         Sort.Direction direction = sortDirection.equalsIgnoreCase("desc") ? 
             Sort.Direction.DESC : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(page, 100, Sort.by(direction, sortBy));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
         
         return ResponseEntity.ok(customerService.searchCustomers(name, code, pageable));
     }
@@ -106,4 +106,7 @@ public class CustomerController {
             return ResponseEntity.badRequest().body("Failed to create customer user");
         }
     }
+
+
+
 }

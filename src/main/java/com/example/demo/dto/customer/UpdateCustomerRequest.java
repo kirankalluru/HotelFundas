@@ -1,24 +1,28 @@
 package com.example.demo.dto.customer;
 
-import com.example.demo.entity.customer.CustomerType;
-import com.example.demo.entity.customer.CustomerStatus;
-import com.example.demo.dto.common.AddressDTO;
 import com.example.demo.entity.common.Address;
 import java.util.List;
 
 public class UpdateCustomerRequest {
+
     private String name;
     private String email;
     private String phone;
     private String gstin;
     private String pan;
+
+    // ✅ MUST EXIST
+    private String drivingLicense;
+
     private String type;
     private String status;
+
     private Address billingAddress;
     private Address shippingAddress;
     private List<ContactPersonDTO> contactPersons;
 
-    // Getters and setters
+    // ========= GETTERS & SETTERS =========
+
     public String getName() {
         return name;
     }
@@ -59,7 +63,22 @@ public class UpdateCustomerRequest {
         this.pan = pan;
     }
 
-  
+    // ✅ REQUIRED METHOD
+    public String getDrivingLicense() {
+        return drivingLicense;
+    }
+
+    public void setDrivingLicense(String drivingLicense) {
+        this.drivingLicense = drivingLicense;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
 
     public String getStatus() {
         return status;
@@ -92,12 +111,4 @@ public class UpdateCustomerRequest {
     public void setContactPersons(List<ContactPersonDTO> contactPersons) {
         this.contactPersons = contactPersons;
     }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }   
-} 
+}
