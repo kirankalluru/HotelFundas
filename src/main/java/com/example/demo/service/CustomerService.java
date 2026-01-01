@@ -16,12 +16,14 @@ import com.example.demo.dto.customer.CreateCustomerUserRequest;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.cache.annotation.Cacheable;
 import javax.persistence.EntityNotFoundException;
 import java.util.List;
 import java.util.ArrayList;
@@ -45,7 +47,10 @@ public class CustomerService {
     }
 
     // ================= CREATE =================
-
+    @CacheEvict(
+            value = { "customer", "customers-page", "customer-search" },
+            allEntries = true
+    )
     public CustomerResponse saveCustomer(Long id, CreateCustomerRequest request) {
 
         Customer customer;
@@ -63,15 +68,20 @@ public class CustomerService {
     }
 
     // ================= GET =================
-
+    @Cacheable(value = "customer", key = "#id")
     public CustomerResponse getCustomerById(Long id) {
+        //to ensure cache working
+        System.out.println("🚆 DB HIT for customer " + id);
         return customerRepository.findById(id)
                 .map(this::convertToResponse)
                 .orElseThrow(() -> new EntityNotFoundException("Customer not found"));
     }
 
     // ================= SEARCH =================
-
+    @Cacheable(
+            value = "customers-page",
+            key = "#name + '-' + #code + '-' + #pageable.pageNumber + '-' + #pageable.pageSize"
+    )
     public Page<CustomerResponse> searchCustomers(String name, String code, Pageable pageable) {
 
         Page<Customer> customers;
@@ -83,11 +93,12 @@ public class CustomerService {
         } else {
             customers = customerRepository.findAll(pageable);
         }
-
+        System.out.println("🚆😊😊😊😊😊😊😊😊😊😊 DB HIT for customers ");
         return customers.map(this::convertToResponse);
     }
 
     // REQUIRED BY CONTROLLER
+    @Cacheable(value = "customer-search", key = "#name")
     public List<CustomerDTO> searchCustomersByName(String name) {
         return customerRepository.findByNameContainingIgnoreCase(name)
                 .stream()
@@ -96,7 +107,10 @@ public class CustomerService {
     }
 
     // ================= DELETE =================
-
+    @CacheEvict(
+            value = { "customer", "customers-page", "customer-search" },
+            allEntries = true
+    )
     public void deleteCustomer(Long id) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Customer not found"));
