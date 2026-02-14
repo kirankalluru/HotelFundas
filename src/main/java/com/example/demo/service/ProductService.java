@@ -38,8 +38,8 @@ public class ProductService {
         product.setName(request.getName());
         product.setDescription(request.getDescription());
         product.setCategory(request.getCategory());
-      
         product.setCode(request.getCode());
+        product.setPrice(request.getPrice());
         return productRepository.save(product);
     }
     
@@ -52,6 +52,7 @@ public class ProductService {
         product.setDescription(request.getDescription());
         product.setCategory(request.getCategory());
         product.setCode(request.getCode());
+        product.setPrice(request.getPrice());
         return productRepository.save(product);
     }
     

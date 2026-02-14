@@ -3,6 +3,7 @@ package com.example.demo.service;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.Random;
+import java.util.UUID;
 
 @Service
 public class ReferenceNumberGenerator {
@@ -40,4 +41,8 @@ public class ReferenceNumberGenerator {
             randomNum        // 4 digit random number
         );
     }
-} 
+
+    public String generate() {
+        return "ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+    }
+}
