@@ -47,5 +47,13 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/{id}/confirm")
+    public ResponseEntity<String> confirmOrder(@PathVariable Long id) {
+
+        orderService.confirmOrder(id);
+
+        return ResponseEntity.ok("Order confirmed and invoice generated successfully");
+    }
+
 
 }

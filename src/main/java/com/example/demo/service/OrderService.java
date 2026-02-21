@@ -27,6 +27,7 @@ public class OrderService {
     private final CustomerRepository customerRepository;
     private final ProductRepository productRepository;
     private final ReferenceNumberGenerator referenceNumberGenerator;
+    private final InvoiceService invoiceService;
 
     public Order placeOrder(OrderRequest request) {
 
@@ -103,6 +104,24 @@ public class OrderService {
         order.setTotalAmount(total);
 
         return orderRepository.save(order);
+    }
+
+
+    @Transactional
+    public void confirmOrder(Long orderId) {
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        if (order.getStatus() != OrderStatus.CREATED) {
+            throw new RuntimeException("Only CREATED orders can be confirmed");
+        }
+
+        order.setStatus(OrderStatus.CONFIRMED);
+
+        orderRepository.save(order);
+
+        invoiceService.generateInvoice(order);
     }
 
 }
